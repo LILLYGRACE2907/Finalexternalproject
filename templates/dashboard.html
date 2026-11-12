@@ -1,0 +1,357 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<main class="container-fluid dashboard-page py-4 px-3 px-md-4">
+
+    <!-- Welcome Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom border-secondary">
+        <div>
+            <h2 class="text-white fw-bold mb-1">
+                Welcome, {{ user.first_name|default:user.username }}!
+            </h2>
+            <p class="text-muted small mb-0">
+                Overview of your facial emotion recognition activity and analytics
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+            <a href="{% url 'recognition' %}" class="btn btn-primary-custom">
+                <i class="bi bi-camera-video-fill me-1"></i>
+                Start Recognition
+            </a>
+
+            <a href="{% url 'history' %}" class="btn btn-outline-custom">
+                <i class="bi bi-clock-history me-1"></i>
+                View History
+            </a>
+        </div>
+    </div>
+
+    <!-- Analytics Cards -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-monospace">
+                        Total Sessions
+                    </span>
+                    <div class="badge bg-primary bg-opacity-20 text-primary p-2 rounded">
+                        <i class="bi bi-cpu fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="text-white fw-bold mb-0">
+                    {{ stats.total_sessions }}
+                </h3>
+                <small class="text-muted">Saved predictions</small>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-monospace">
+                        Most Detected
+                    </span>
+                    <div class="badge bg-success bg-opacity-20 text-success p-2 rounded">
+                        <i class="bi bi-emoji-smile fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="text-white fw-bold mb-0">
+                    {{ stats.most_detected }}
+                </h3>
+                <small class="text-muted">Top emotion state</small>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-monospace">
+                        Latest Emotion
+                    </span>
+                    <div class="badge bg-info bg-opacity-20 text-info p-2 rounded">
+                        <i class="bi bi-lightning-charge fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="text-white fw-bold mb-0 text-truncate">
+                    {{ stats.latest_emotion }}
+                </h3>
+                <small class="text-muted">Most recent capture</small>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-monospace">
+                        Avg Confidence
+                    </span>
+                    <div class="badge bg-warning bg-opacity-20 text-warning p-2 rounded">
+                        <i class="bi bi-graph-up-arrow fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="text-white fw-bold mb-0">
+                    {{ stats.avg_confidence }}%
+                </h3>
+                <small class="text-muted">Mean model confidence</small>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Charts and Recent Results -->
+    <div class="row g-4 mb-4 dashboard-results">
+
+        <!-- Emotion Distribution -->
+        <div class="col-12 col-xl-5">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="text-white fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-pie-chart-fill text-info"></i>
+                    Emotion Distribution
+                </h5>
+
+                <div class="dashboard-chart-container">
+                    <canvas id="emotionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Recognition Results -->
+        <div class="col-12 col-xl-7">
+            <div class="card card-custom p-4 h-100">
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <h5 class="text-white fw-bold mb-0">
+                        <i class="bi bi-list-task text-primary me-2"></i>
+                        Recent Recognition Results
+                    </h5>
+
+                    <a href="{% url 'history' %}"
+                       class="text-info small text-decoration-none">
+                        View All &rarr;
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-custom align-middle">
+                        <thead>
+                            <tr>
+                                <th>Emotion</th>
+                                <th>Confidence</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for record in recent_records %}
+                            <tr>
+                                <td>
+                                    <span class="badge
+                                        {% if record.emotion == 'Happy' %}badge-happy
+                                        {% elif record.emotion == 'Sad' %}badge-sad
+                                        {% elif record.emotion == 'Angry' %}badge-angry
+                                        {% elif record.emotion == 'Surprise' %}badge-surprise
+                                        {% elif record.emotion == 'Disgust' %}badge-disgust
+                                        {% elif record.emotion == 'Fear' %}badge-fear
+                                        {% else %}badge-neutral{% endif %}
+                                        px-3 py-2">
+                                        {{ record.emotion }}
+                                    </span>
+                                </td>
+
+                                <td class="fw-semibold text-info">
+                                    {{ record.confidence|floatformat:1 }}%
+                                </td>
+
+                                <td class="text-muted small">
+                                    {{ record.timestamp|date:"Y-m-d" }}
+                                </td>
+
+                                <td class="text-muted small">
+                                    {{ record.timestamp|time:"H:i:s" }}
+                                </td>
+                            </tr>
+
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox text-secondary fs-3 d-block mb-2"></i>
+                                    No recognition sessions recorded yet.
+                                    <br>
+                                    <a href="{% url 'recognition' %}"
+                                       class="btn btn-primary-custom btn-sm mt-2">
+                                        Start First Recognition
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<style>
+/* Dashboard layout */
+.dashboard-page {
+    position: relative;
+    display: flow-root;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+    height: auto;
+    padding-bottom: 40px !important;
+    box-sizing: border-box;
+}
+
+/* Keep dashboard rows inside their containers */
+.dashboard-page .row {
+    min-width: 0;
+}
+
+.dashboard-page .card {
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Chart size */
+.dashboard-chart-container {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    min-height: 250px;
+}
+
+/* Table overflow */
+.dashboard-page .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* Footer spacing and normal page flow */
+footer,
+.footer {
+    clear: both;
+    margin-top: 24px;
+}
+
+/* Mobile layout */
+@media (max-width: 767.98px) {
+    .dashboard-page {
+        padding-bottom: 30px !important;
+    }
+
+    .dashboard-chart-container {
+        height: 250px;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const canvas = document.getElementById('emotionChart');
+
+    if (!canvas || typeof Chart === 'undefined') {
+        return;
+    }
+
+    const labels = {{ chart_labels|default:"[]"|safe }};
+    const data = {{ chart_data|default:"[]"|safe }};
+
+    const emotionColors = {
+        'Happy': '#3b82f6',
+        'Sad': '#10b981',
+        'Angry': '#ef4444',
+        'Neutral': '#06b6d4',
+        'Surprise': '#f97316',
+        'Disgust': '#a855f7',
+        'Fear': '#64748b'
+    };
+
+    const chartColors = labels.map(function (emotion) {
+        const normalizedEmotion = String(emotion).trim().toLowerCase();
+
+        const matchingEmotion = Object.keys(emotionColors).find(
+            function (key) {
+                return key.toLowerCase() === normalizedEmotion;
+            }
+        );
+
+        return matchingEmotion
+            ? emotionColors[matchingEmotion]
+            : '#64748b';
+    });
+
+    if (Array.isArray(labels) && Array.isArray(data) &&
+        labels.length > 0 && labels.length === data.length) {
+
+        if (Chart.getChart(canvas)) {
+            Chart.getChart(canvas).destroy();
+        }
+
+        new Chart(canvas, {
+            type: 'doughnut',
+
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Emotion Distribution',
+                    data: data,
+                    backgroundColor: chartColors,
+                    borderWidth: 2,
+                    borderColor: '#1e293b',
+                    hoverOffset: 8
+                }]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            color: '#cbd5e1',
+                            padding: 10,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: function (context) {
+                                return ' ' + context.label + ': ' +
+                                    context.parsed;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

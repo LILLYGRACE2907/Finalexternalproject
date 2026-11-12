@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+
+py312env/
+venv312/
+__pycache__/
+*.pyc
+*.pyo
+.env
+db.sqlite3
+*.log
+.DS_Store
+
+# Large unnecessary folders
+backups/
+dataset/
+dataset_backup/
+dataset_split/
+results/
+
+# Test images
+camera_test*.jpg
+
+# Virtual environments
+py312env/
+venv312/
+
+database/*.db
+*.bak
+*.bak2
+*.bak3

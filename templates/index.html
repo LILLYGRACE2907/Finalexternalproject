@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-center">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <span class="badge bg-primary bg-opacity-20 text-info px-3 py-2 mb-3 rounded-pill">
+                    <i class="bi bi-cpu me-1"></i> Computer Vision & Deep Learning
+                </span>
+                <h1 class="hero-title mb-4">FACIAL EMOTION RECOGNITION SYSTEM</h1>
+                <p class="hero-subtitle mb-5 mx-auto" style="max-width: 750px;">
+                    AI-powered real-time facial emotion recognition using computer vision and deep learning. Detect emotions, calculate confidence scores, and analyze sentiment seamlessly.
+                </p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'recognition' %}" class="btn btn-primary-custom btn-lg">
+                            <i class="bi bi-camera-video-fill me-2"></i>Start Recognition
+                        </a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-custom btn-lg">
+                            <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
+                        </a>
+                    {% else %}
+                        <a href="{% url 'register' %}" class="btn btn-primary-custom btn-lg">
+                            <i class="bi bi-rocket-takeoff-fill me-2"></i>Get Started Free
+                        </a>
+                        <a href="{% url 'about' %}" class="btn btn-outline-custom btn-lg">
+                            <i class="bi bi-book me-2"></i>Learn More
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section class="py-5 bg-dark border-top border-bottom border-secondary border-opacity-25">
+    <div class="container">
+        <div class="row align-items-center gy-4">
+            <div class="col-lg-6">
+                <h6 class="text-info fw-bold text-uppercase">About The System</h6>
+                <h2 class="text-white fw-bold mb-3">Intelligent Visual Emotion Analytics</h2>
+                <p class="text-muted">
+                    Our Facial Emotion Recognition System combines advanced Haar Cascade face detection with Convolutional Neural Network (CNN) classification. The platform captures video streams or still images, locates faces, normalizes image ROIs, and categorizes emotional states instantly.
+                </p>
+                <div class="row gy-3 mt-2">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center gap-2 text-light">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>7 Emotion Classes</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center gap-2 text-light">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Real-Time Webcam Feed</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center gap-2 text-light">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Personalized History</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center gap-2 text-light">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Interactive Analytics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card card-custom p-4 text-center">
+                    <div class="p-5 border border-secondary border-dashed rounded-3 bg-dark">
+                        <i class="bi bi-person-bounding-box text-info display-1 mb-3"></i>
+                        <h5 class="text-white">Real-Time Face Detector</h5>
+                        <p class="text-muted small">Multi-face detection & bounding box annotation powered by OpenCV</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h6 class="text-info fw-bold text-uppercase">Workflow</h6>
+            <h2 class="text-white fw-bold">How It Works</h2>
+            <p class="text-muted">Four simple steps from camera input to emotion detection</p>
+        </div>
+        <div class="row gy-4">
+            <div class="col-md-3">
+                <div class="card card-custom h-100 p-4 text-center">
+                    <div class="badge bg-primary rounded-circle mx-auto mb-3 p-3 fs-5" style="width:50px; height:50px;">1</div>
+                    <h5 class="text-white mb-2">Webcam Feed</h5>
+                    <p class="text-muted small mb-0">Capture live camera stream or upload photos directly through the browser.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom h-100 p-4 text-center">
+                    <div class="badge bg-info rounded-circle mx-auto mb-3 p-3 fs-5" style="width:50px; height:50px;">2</div>
+                    <h5 class="text-white mb-2">Face Detection</h5>
+                    <p class="text-muted small mb-0">OpenCV Haar Cascade locates face bounding coordinates automatically.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom h-100 p-4 text-center">
+                    <div class="badge bg-warning rounded-circle mx-auto mb-3 p-3 fs-5" style="width:50px; height:50px;">3</div>
+                    <h5 class="text-white mb-2">Preprocessing</h5>
+                    <p class="text-muted small mb-0">Grayscale conversion, 48x48 resizing, and normalization for the model.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom h-100 p-4 text-center">
+                    <div class="badge bg-success rounded-circle mx-auto mb-3 p-3 fs-5" style="width:50px; height:50px;">4</div>
+                    <h5 class="text-white mb-2">Prediction</h5>
+                    <p class="text-muted small mb-0">CNN classifies emotion & calculates confidence score percentages.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Supported Emotions Section -->
+<section class="py-5 bg-dark border-top border-bottom border-secondary border-opacity-25">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h6 class="text-info fw-bold text-uppercase">Supported Classes</h6>
+            <h2 class="text-white fw-bold">7 Core Facial Emotions</h2>
+            <p class="text-muted">Trained to recognize primary human emotional expressions</p>
+        </div>
+        <div class="row g-3">
+            <div class="col-6 col-md-4 col-lg border-0">
+                <div class="card card-custom text-center p-3 h-100 border-danger border-opacity-50">
+                    <i class="bi bi-emoji-angry-fill text-danger display-5 mb-2"></i>
+                    <h6 class="text-white">Angry</h6>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg border-0">
+                <div class="card card-custom text-center p-3 h-100 border-warning border-opacity-50">
+                    <i class="bi bi-emoji-dizzy-fill text-warning display-5 mb-2"></i>
+                    <h6 class="text-white">Disgust</h6>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg border-0">
+                <div class="card card-custom text-center p-3 h-100" style="border-color: #a855f7;">
+                    <i class="bi bi-emoji-grimace-fill display-5 mb-2" style="color: #a855f7;"></i>
+                    <h6 class="text-white">Fear</h6>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg border-0">
+                <div class="card card-custom text-center p-3 h-100 border-success border-opacity-50">
+                    <i class="bi bi-emoji-smile-fill text-success display-5 mb-2"></i>
+                    <h6 class="text-white">Happy</h6>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg border-0">
+                <div class="card card-custom text-center p-3 h-100 border-primary border-opacity-50">
+                    <i class="bi bi-emoji-frown-fill text-primary display-5 mb-2"></i>
+                    <h6 class="text-white">Sad</h6>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg border-0">
+                <div class="card card-custom text-center p-3 h-100 border-info border-opacity-50">
+                    <i class="bi bi-emoji-surprise-fill text-info display-5 mb-2"></i>
+                    <h6 class="text-white">Surprise</h6>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg border-0">
+                <div class="card card-custom text-center p-3 h-100 border-secondary border-opacity-50">
+                    <i class="bi bi-emoji-neutral-fill text-secondary display-5 mb-2"></i>
+                    <h6 class="text-white">Neutral</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 text-center">
+    <div class="container">
+        <div class="card card-custom p-5 bg-gradient">
+            <h2 class="text-white fw-bold mb-3">Ready to test facial emotion recognition?</h2>
+            <p class="text-muted mx-auto mb-4" style="max-width: 600px;">
+                Experience real-time AI emotion classification on your live webcam or images.
+            </p>
+            <div>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'recognition' %}" class="btn btn-primary-custom btn-lg">Launch Live Recognition</a>
+                {% else %}
+                    <a href="{% url 'register' %}" class="btn btn-primary-custom btn-lg">Create Free Account</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

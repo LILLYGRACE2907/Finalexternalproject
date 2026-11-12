@@ -1,0 +1,1274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    .recognition-page {
+        position: relative;
+        width: 100%;
+        min-height: 75vh;
+        padding: 30px 0 50px;
+        z-index: 1;
+    }
+
+    .recognition-page .card-custom {
+        height: auto;
+        min-width: 0;
+        overflow: visible;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        background: #10182c;
+        padding: 20px;
+    }
+
+    .camera-container {
+        position: relative;
+        width: 100%;
+        min-height: 400px;
+        background: #050914;
+        border: 1px solid #64748b;
+        border-radius: 15px;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #videoWrapper {
+        display: none;
+        position: relative;
+        max-width: 100%;
+        max-height: 520px;
+        line-height: 0;
+    }
+
+    #webcamVideo {
+        display: block;
+        max-width: 100%;
+        max-height: 520px;
+        object-fit: contain;
+        transform: scaleX(-1); /* Mirror camera for natural feel */
+        border-radius: 8px;
+    }
+
+    #overlayCanvas {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    #previewImage {
+        display: none;
+        width: 100%;
+        max-height: 520px;
+        object-fit: contain;
+    }
+
+    #cameraOverlay {
+        width: 100%;
+        min-height: 380px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .camera-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .camera-controls button,
+    .camera-controls label {
+        cursor: pointer;
+    }
+
+    .summary-box {
+        background: #20262c;
+        border: 1px solid #505762;
+        border-radius: 8px;
+        padding: 18px;
+    }
+
+    .emotion-score {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        background: #20262c;
+        border-radius: 7px;
+        padding: 10px;
+        margin-bottom: 8px;
+        color: white;
+    }
+
+    .recognition-page .progress {
+        height: 10px;
+        background: #33394a;
+    }
+
+    .recognition-page .progress-bar {
+        transition: width 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+        .recognition-page {
+            padding: 20px 12px 40px;
+        }
+
+        .camera-container,
+        #cameraOverlay {
+            min-height: 280px;
+        }
+
+        .camera-controls button,
+        .camera-controls label {
+            flex: 1 1 140px;
+        }
+    }
+</style>
+
+<div class="recognition-page">
+    <div class="container">
+        {% csrf_token %}
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h3 class="text-white fw-bold mb-1">
+                    <i class="bi bi-camera-video-fill text-info me-2"></i>
+                    Facial Emotion Recognition
+                </h3>
+                <p class="text-muted mb-0">Real-time browser webcam & deep learning facial emotion analysis</p>
+            </div>
+
+            <span id="systemStatusBadge" class="badge bg-secondary p-2">
+                Camera Inactive
+            </span>
+        </div>
+
+        <!-- Camera Notification Banner -->
+        <div id="cameraAlert" class="alert alert-danger d-none shadow-sm mb-3" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
+                <div id="cameraAlertMsg">An error occurred with camera access.</div>
+            </div>
+        </div>
+
+        <div id="cameraNotice" class="alert alert-info d-none shadow-sm mb-3" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle-fill fs-4 me-2"></i>
+                <div id="cameraNoticeMsg">Notice message.</div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- CAMERA SECTION -->
+            <div class="col-lg-7">
+                <div class="card-custom">
+
+                    <div class="camera-container" id="cameraViewport">
+                        <!-- Live Browser Video Stream and Canvas Overlay -->
+                        <div id="videoWrapper">
+                            <video id="webcamVideo" autoplay playsinline muted></video>
+                            <canvas id="overlayCanvas"></canvas>
+                        </div>
+
+                        <!-- Still photo / uploaded image preview -->
+                        <img id="previewImage" src="" alt="Analyzed frame">
+
+                        <!-- Stopped / Placeholder State -->
+                        <div id="cameraOverlay">
+                            <i class="bi bi-camera-video-off fs-1 text-secondary mb-3"></i>
+                            <h5 class="text-white">Camera Stopped</h5>
+                            <p class="text-secondary small mb-3">
+                                Click <strong>Start Camera</strong> below to request webcam permissions and begin live recognition.
+                            </p>
+                            <span class="badge bg-dark border border-secondary text-muted">
+                                <i class="bi bi-shield-lock me-1"></i> HTTPS or Localhost Required
+                            </span>
+                        </div>
+
+                        <!-- Offscreen canvas for frame capture -->
+                        <canvas id="captureCanvas" style="display: none;"></canvas>
+                    </div>
+
+                    <!-- Camera Source Selector -->
+                    <div class="mt-3 mb-2 p-2 rounded" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="cameraSelect" class="form-label text-white small fw-bold mb-0">
+                                <i class="bi bi-camera-video me-1 text-info"></i> Camera Device Source
+                            </label>
+                            <span id="cameraSourceBadge" class="badge bg-secondary font-monospace" style="font-size: 0.72rem;">Detecting...</span>
+                        </div>
+                        <div class="input-group">
+                            <select id="cameraSelect" class="form-select bg-dark text-white border-secondary">
+                                <option value="">Detecting available cameras...</option>
+                            </select>
+                            <button type="button" id="btnRefreshCameras" class="btn btn-outline-secondary" title="Scan for cameras">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Camera Controls -->
+                    <div class="camera-controls">
+                        <button type="button" id="btnStartCam" class="btn btn-primary">
+                            <i class="bi bi-play-fill me-1"></i> Start Camera
+                        </button>
+
+                        <button type="button" id="btnStopCam" class="btn btn-outline-danger" disabled>
+                            <i class="bi bi-stop-fill me-1"></i> Stop Camera
+                        </button>
+
+                        <button type="button" id="btnCapture" class="btn btn-outline-info" disabled>
+                            <i class="bi bi-camera-fill me-1"></i> Capture & Analyze
+                        </button>
+
+                        <button type="button" id="btnRetry" class="btn btn-warning d-none">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Retry Analysis
+                        </button>
+
+                        <label class="btn btn-outline-secondary mb-0">
+                            <i class="bi bi-upload me-1"></i> Upload Photo
+                            <input type="file" id="fileInput" accept="image/*" hidden>
+                        </label>
+
+                        <button type="button" id="btnSaveResult" class="btn btn-success" disabled>
+                            <i class="bi bi-bookmark-check me-1"></i> Save Result
+                        </button>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="mirrorToggle" checked>
+                            <label class="form-check-label text-secondary small" for="mirrorToggle">Mirror View</label>
+                        </div>
+                        <span id="resolutionBadge" class="text-secondary small font-monospace">Ready</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-secondary border-opacity-25">
+                        <small class="text-muted">
+                            <i class="bi bi-lightbulb me-1"></i> Keep your face clearly visible and well-lit for optimal accuracy.
+                        </small>
+                        <small id="fpsIndicator" class="text-secondary font-monospace">Ready</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMOTION SUMMARY -->
+            <div class="col-lg-5">
+                <div class="card-custom mb-4">
+
+                    <h5 class="text-white fw-bold mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-cpu-fill text-info"></i>
+                        Detection Summary
+                    </h5>
+
+                    <div class="summary-box mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-secondary small text-uppercase font-monospace">Detected Emotion</span>
+                            <span id="emotionBadge" class="badge bg-secondary">Awaiting input</span>
+                        </div>
+                        <div id="displayEmotion" class="fs-2 fw-bold text-info">
+                            Waiting...
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-secondary small font-monospace">Confidence Score</span>
+                        <strong id="displayConfidence" class="text-white fs-5">0.0%</strong>
+                    </div>
+
+                    <div class="progress mb-3">
+                        <div id="displayProgress"
+                             class="progress-bar bg-info"
+                             style="width: 0%"
+                             role="progressbar"
+                             aria-valuenow="0"
+                             aria-valuemin="0"
+                             aria-valuemax="100"></div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="summary-box text-center h-100">
+                                <span class="text-secondary small">Faces Detected</span>
+                                <div id="displayFaceCount" class="fs-3 fw-bold text-white mt-1">0</div>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="summary-box text-center h-100">
+                                <span class="text-secondary small">Analysis Status</span>
+                                <div id="displayStatus" class="fw-bold text-warning mt-2">
+                                    Ready
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Face Selector / Indicator (Active when multiple faces are detected) -->
+                <div id="multiFaceContainer" class="card-custom mb-4 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white small fw-bold">
+                            <i class="bi bi-people-fill text-info me-1"></i> Detected Faces
+                        </span>
+                        <span id="activeFaceLabel" class="badge bg-primary font-monospace" style="font-size: 0.72rem;">Face 1</span>
+                    </div>
+                    <div id="multiFaceList" class="d-flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- EMOTION SCORES -->
+                <div class="card-custom">
+                    <h5 class="text-white fw-bold mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-bar-chart-fill text-primary"></i>
+                        Supported Emotion Classes
+                    </h5>
+
+                    <div id="emotionList">
+                        {% for emo in emotions %}
+                        <div class="emotion-score" id="item-{{ emo }}">
+                            <span>{{ emo }}</span>
+                            <span id="score-{{ emo }}" class="badge bg-secondary font-monospace">0.0%</span>
+                        </div>
+                        {% empty %}
+                        <div class="emotion-score"><span>Angry</span><span id="score-Angry" class="badge bg-secondary">0.0%</span></div>
+                        <div class="emotion-score"><span>Disgust</span><span id="score-Disgust" class="badge bg-secondary">0.0%</span></div>
+                        <div class="emotion-score"><span>Fear</span><span id="score-Fear" class="badge bg-secondary">0.0%</span></div>
+                        <div class="emotion-score"><span>Happy</span><span id="score-Happy" class="badge bg-secondary">0.0%</span></div>
+                        <div class="emotion-score"><span>Neutral</span><span id="score-Neutral" class="badge bg-secondary">0.0%</span></div>
+                        <div class="emotion-score"><span>Sad</span><span id="score-Sad" class="badge bg-secondary">0.0%</span></div>
+                        <div class="emotion-score"><span>Surprise</span><span id="score-Surprise" class="badge bg-secondary">0.0%</span></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // DOM Elements
+    const videoWrapper = document.getElementById("videoWrapper");
+    const video = document.getElementById("webcamVideo");
+    const overlayCanvas = document.getElementById("overlayCanvas");
+    const previewImage = document.getElementById("previewImage");
+    const cameraOverlay = document.getElementById("cameraOverlay");
+    const captureCanvas = document.getElementById("captureCanvas");
+
+    const startBtn = document.getElementById("btnStartCam");
+    const stopBtn = document.getElementById("btnStopCam");
+    const captureBtn = document.getElementById("btnCapture");
+    const retryBtn = document.getElementById("btnRetry");
+    const saveBtn = document.getElementById("btnSaveResult");
+    const fileInput = document.getElementById("fileInput");
+
+    const emotionElement = document.getElementById("displayEmotion");
+    const emotionBadge = document.getElementById("emotionBadge");
+    const confidenceElement = document.getElementById("displayConfidence");
+    const progressElement = document.getElementById("displayProgress");
+    const faceCountElement = document.getElementById("displayFaceCount");
+    const statusElement = document.getElementById("displayStatus");
+    const systemBadge = document.getElementById("systemStatusBadge");
+    const fpsIndicator = document.getElementById("fpsIndicator");
+
+    const cameraAlert = document.getElementById("cameraAlert");
+    const cameraAlertMsg = document.getElementById("cameraAlertMsg");
+    const cameraNotice = document.getElementById("cameraNotice");
+    const cameraNoticeMsg = document.getElementById("cameraNoticeMsg");
+
+    const cameraSelect = document.getElementById("cameraSelect");
+    const cameraSourceBadge = document.getElementById("cameraSourceBadge");
+    const btnRefreshCameras = document.getElementById("btnRefreshCameras");
+    const mirrorToggle = document.getElementById("mirrorToggle");
+    const resolutionBadge = document.getElementById("resolutionBadge");
+
+    const processUrl = "{% url 'process_frame' %}";
+    const saveUrl = "{% url 'save_recognition' %}";
+
+    // Emotion Color Mapping for bounding boxes
+    const emotionColors = {
+        "Angry": "#dc3545",
+        "Disgust": "#fd7e14",
+        "Fear": "#6f42c1",
+        "Happy": "#198754",
+        "Neutral": "#6c757d",
+        "Sad": "#0d6efd",
+        "Surprise": "#0dcaf0"
+    };
+
+    // State Variables
+    let mediaStream = null;
+    let cameraRunning = false;
+    let isProcessing = false;
+    let analysisTimer = null;
+    let latestEmotion = "";
+    let latestConfidence = 0;
+    let currentRequestId = 0;
+    let consecutiveErrors = 0;
+
+    // CSRF Cookie Helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue || (document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : "");
+    }
+
+    // Alert Helpers
+    function showError(message) {
+        cameraAlertMsg.textContent = message;
+        cameraAlert.classList.remove("d-none");
+        cameraNotice.classList.add("d-none");
+    }
+
+    function showNotice(message) {
+        cameraNoticeMsg.textContent = message;
+        cameraNotice.classList.remove("d-none");
+        cameraAlert.classList.add("d-none");
+    }
+
+    function hideAlerts() {
+        cameraAlert.classList.add("d-none");
+        cameraNotice.classList.add("d-none");
+    }
+
+    function setStatus(message, color = "warning") {
+        statusElement.textContent = message;
+        statusElement.className = "fw-bold mt-2 text-" + color;
+    }
+
+    function resetResults(message = "Waiting...") {
+        latestEmotion = "";
+        latestConfidence = 0;
+        emotionElement.textContent = message;
+        emotionBadge.textContent = "Awaiting input";
+        emotionBadge.className = "badge bg-secondary";
+        confidenceElement.textContent = "0.0%";
+        progressElement.style.width = "0%";
+        faceCountElement.textContent = "0";
+
+        const multiFaceContainer = document.getElementById("multiFaceContainer");
+        const multiFaceList = document.getElementById("multiFaceList");
+        if (multiFaceContainer) multiFaceContainer.classList.add("d-none");
+        if (multiFaceList) multiFaceList.innerHTML = "";
+
+        document.querySelectorAll('[id^="score-"]').forEach(function (item) {
+            item.textContent = "0.0%";
+            item.className = "badge bg-secondary font-monospace";
+        });
+
+        saveBtn.disabled = true;
+        clearOverlay();
+    }
+
+    function clearOverlay() {
+        const ctx = overlayCanvas.getContext("2d");
+        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    }
+
+    // Check secure context and getUserMedia support
+    function isCameraSupported() {
+        const isLocalhost = window.location.hostname === "localhost" ||
+                            window.location.hostname === "127.0.0.1" ||
+                            window.location.hostname === "::1";
+
+        if (!window.isSecureContext && !isLocalhost && window.location.protocol !== "https:") {
+            showError("Webcam access requires a secure connection (HTTPS or localhost). Please access the site via http://localhost:8000/ or HTTPS.");
+            return false;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showError("Your browser does not support the camera API (navigator.mediaDevices.getUserMedia). Please use a modern browser (Google Chrome, Firefox, Microsoft Edge, or Safari).");
+            return false;
+        }
+
+        return true;
+    }
+
+    // Render multi-face selector buttons when multiple faces exist
+    function renderMultiFaceSelector(results) {
+        const container = document.getElementById("multiFaceContainer");
+        const list = document.getElementById("multiFaceList");
+        const activeLabel = document.getElementById("activeFaceLabel");
+        if (!container || !list) return;
+
+        if (!results || results.length <= 1) {
+            container.classList.add("d-none");
+            list.innerHTML = "";
+            return;
+        }
+
+        container.classList.remove("d-none");
+        list.innerHTML = "";
+        if (activeLabel) activeLabel.textContent = `Face 1 of ${results.length}`;
+
+        results.forEach((res, idx) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = idx === 0 ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
+            const conf = Number(res.confidence) || 0;
+            btn.innerHTML = `<i class="bi bi-person me-1"></i>Face ${idx + 1}: <strong>${res.emotion}</strong> <small class="text-white-50">(${conf.toFixed(0)}%)</small>`;
+            btn.addEventListener("click", function () {
+                Array.from(list.children).forEach(b => b.className = "btn btn-sm btn-outline-secondary");
+                btn.className = "btn btn-sm btn-primary";
+                if (activeLabel) activeLabel.textContent = `Face ${idx + 1} of ${results.length}`;
+                showResult(res, results.length);
+            });
+            list.appendChild(btn);
+        });
+    }
+
+    // Display prediction result in UI
+    function showResult(result, faceCount) {
+        faceCountElement.textContent = faceCount;
+
+        if (!result || faceCount === 0) {
+            resetResults("No Face Detected");
+            faceCountElement.textContent = 0;
+            setStatus("No Face Detected", "secondary");
+            fpsIndicator.textContent = "Looking for faces...";
+            return;
+        }
+
+        latestEmotion = result.emotion;
+        latestConfidence = Number(result.confidence) || 0;
+
+        // Confidence tier criteria:
+        // - 50% and above: Confident
+        // - 35% to below 50%: Moderate Confidence
+        // - Below 35%: Low Confidence / Ambiguous
+        emotionElement.textContent = latestEmotion;
+        if (latestConfidence >= 50.0) {
+            emotionBadge.textContent = "Confident";
+            emotionBadge.className = "badge bg-success";
+            setStatus("Emotion Detected (Confident)", "success");
+            fpsIndicator.textContent = `${latestEmotion} (${latestConfidence.toFixed(1)}%) - Confident`;
+        } else if (latestConfidence >= 35.0) {
+            emotionBadge.textContent = "Moderate Confidence";
+            emotionBadge.className = "badge bg-info text-dark";
+            setStatus("Emotion Detected (Moderate)", "info");
+            fpsIndicator.textContent = `${latestEmotion} (${latestConfidence.toFixed(1)}%) - Moderate`;
+        } else {
+            emotionBadge.textContent = "Low Confidence / Ambiguous";
+            emotionBadge.className = "badge bg-warning text-dark";
+            setStatus("Emotion Detected (Low / Ambiguous)", "warning");
+            fpsIndicator.textContent = `${latestEmotion} (${latestConfidence.toFixed(1)}%) - Ambiguous`;
+        }
+
+        confidenceElement.textContent = latestConfidence.toFixed(1) + "%";
+        progressElement.style.width = Math.min(100, Math.max(0, latestConfidence)) + "%";
+
+        const scores = result.scores || {};
+
+        Object.entries(scores).forEach(function ([emotion, score]) {
+            const item = document.getElementById("score-" + emotion);
+            if (!item) return;
+
+            item.textContent = Number(score).toFixed(1) + "%";
+            if (emotion === latestEmotion) {
+                item.className = "badge bg-info text-dark font-monospace fw-bold";
+            } else {
+                item.className = "badge bg-secondary font-monospace";
+            }
+        });
+
+        saveBtn.disabled = false;
+    }
+
+    // Draw bounding boxes on overlay canvas
+    function drawBoundingBoxes(results, videoWidth, videoHeight) {
+        if (!overlayCanvas || !results || results.length === 0) {
+            clearOverlay();
+            return;
+        }
+
+        // Align overlay canvas internal coordinate resolution with video
+        if (overlayCanvas.width !== videoWidth || overlayCanvas.height !== videoHeight) {
+            overlayCanvas.width = videoWidth;
+            overlayCanvas.height = videoHeight;
+        }
+
+        const ctx = overlayCanvas.getContext("2d");
+        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+        results.forEach(function (res) {
+            const box = res.box;
+            if (!box || box.length !== 4) return;
+
+            const [x, y, w, h] = box;
+            const emo = res.emotion;
+            const conf = Number(res.confidence) || 0;
+            let tierTag = "";
+            if (conf >= 50.0) {
+                tierTag = "";
+            } else if (conf >= 35.0) {
+                tierTag = " (Mod)";
+            } else {
+                tierTag = " (Low)";
+            }
+            const isLow = conf < 35.0;
+            const strokeColor = emotionColors[emo] || "#22d3ee";
+
+            // Align bounding box coordinate with mirroring setting
+            const isMirrored = mirrorToggle && mirrorToggle.checked;
+            const drawX = isMirrored ? (overlayCanvas.width - (x + w)) : x;
+
+            // Draw bounding rectangle
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = strokeColor;
+            ctx.strokeRect(drawX, y, w, h);
+
+            // Draw label background pill with actual emotion name
+            const labelText = `${emo}: ${conf.toFixed(1)}%${tierTag}`;
+            ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
+            const textWidth = ctx.measureText(labelText).width;
+            const pillHeight = 24;
+
+            const pillY = Math.max(0, y - pillHeight);
+            ctx.fillStyle = strokeColor;
+            ctx.fillRect(drawX, pillY, textWidth + 14, pillHeight);
+
+            // Draw label text (crisp and readable left-to-right)
+            ctx.fillStyle = isLow ? "#111827" : "#ffffff";
+            ctx.fillText(labelText, drawX + 7, pillY + 17);
+        });
+    }
+
+    // Send frame / image to Django backend API
+    async function sendFrameForAnalysis(imageDataUrl, isManual = false) {
+        if (!imageDataUrl || isProcessing) return;
+
+        const reqId = ++currentRequestId;
+        isProcessing = true;
+        setStatus("Analyzing", "warning");
+        fpsIndicator.textContent = "Analyzing frame...";
+
+        try {
+            const csrfToken = getCookie("csrftoken");
+            const response = await fetch(processUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                },
+                body: JSON.stringify({ image: imageDataUrl })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Server returned HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Ignore stale API responses from older frames or stopped camera sessions
+            if (reqId !== currentRequestId) {
+                return;
+            }
+
+            if (!data.success) {
+                throw new Error(data.error || "Analysis failed on server.");
+            }
+
+            // Reset error counter and hide retry button on successful response
+            consecutiveErrors = 0;
+            if (retryBtn) retryBtn.classList.add("d-none");
+            hideAlerts();
+
+            const facesCount = Number(data.faces_count) || 0;
+            const results = data.results || [];
+
+            if (facesCount > 0 && results.length > 0) {
+                renderMultiFaceSelector(results);
+                showResult(results[0], facesCount);
+                if (cameraRunning && video.videoWidth > 0) {
+                    drawBoundingBoxes(results, video.videoWidth, video.videoHeight);
+                } else if (!cameraRunning) {
+                    if (data.annotated_image) {
+                        previewImage.src = data.annotated_image;
+                    }
+                    if (facesCount > 1) {
+                        showNotice(`Detected ${facesCount} faces in the image. Select a face in the Detected Faces section to inspect its emotion analysis.`);
+                    }
+                }
+            } else {
+                renderMultiFaceSelector([]);
+                showResult(null, 0);
+                if (!cameraRunning) {
+                    showNotice("No face detected in the uploaded image. Please ensure the face is clearly visible, well-lit, and facing forward.");
+                }
+            }
+
+        } catch (error) {
+            if (reqId === currentRequestId) {
+                console.error("Frame analysis error:", error);
+                setStatus("Analysis Error", "danger");
+                fpsIndicator.textContent = "Error: " + error.message;
+                consecutiveErrors++;
+                if (consecutiveErrors >= 3) {
+                    showError("Repeated analysis errors (" + error.message + "). Automatic frame capture paused. Click 'Retry Analysis' to resume.");
+                    if (retryBtn) retryBtn.classList.remove("d-none");
+                }
+            }
+        } finally {
+            if (reqId === currentRequestId) {
+                isProcessing = false;
+                // Schedule the next live camera frame ONLY after the current analysis has finished and no repeated fatal errors
+                if (cameraRunning && consecutiveErrors < 3) {
+                    if (analysisTimer) clearTimeout(analysisTimer);
+                    analysisTimer = setTimeout(captureCurrentVideoFrame, 1200);
+                }
+            }
+        }
+    }
+
+    // Check if the captured frame is a solid / blank green screen
+    // (signature output of DirectShow / virtual camera drivers when stream is uninitialized or idle)
+    function isBlankGreenFrame(canvas) {
+        if (!canvas.width || !canvas.height) return false;
+        try {
+            const ctx = canvas.getContext("2d");
+            const w = canvas.width;
+            const h = canvas.height;
+            const stepX = Math.max(1, Math.floor(w / 16));
+            const stepY = Math.max(1, Math.floor(h / 16));
+            const imgData = ctx.getImageData(0, 0, w, h).data;
+            let greenCount = 0;
+            let total = 0;
+
+            for (let y = 0; y < h; y += stepY) {
+                for (let x = 0; x < w; x += stepX) {
+                    const idx = (y * w + x) * 4;
+                    const r = imgData[idx];
+                    const g = imgData[idx + 1];
+                    const b = imgData[idx + 2];
+                    // DirectShow uninitialized YUV zeroes (0,0,0) decode to RGB: R<40, G>75, B<40
+                    if (g > 75 && r < 45 && b < 45) {
+                        greenCount++;
+                    }
+                    total++;
+                }
+            }
+            return total > 0 && (greenCount / total) >= 0.85;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Mirror View handler
+    function applyMirroring() {
+        if (mirrorToggle && mirrorToggle.checked) {
+            video.style.transform = "scaleX(-1)";
+        } else {
+            video.style.transform = "none";
+        }
+    }
+
+    // Update Camera Source Badge
+    function updateCameraBadge() {
+        if (!cameraSelect || cameraSelect.options.length === 0) return;
+        const selectedText = (cameraSelect.options[cameraSelect.selectedIndex]?.text || "").toLowerCase();
+        if (selectedText.includes("droidcam") || selectedText.includes("phone")) {
+            cameraSourceBadge.textContent = "DroidCam (Phone)";
+            cameraSourceBadge.className = "badge bg-info text-dark font-monospace";
+        } else if (selectedText.includes("laptop") || selectedText.includes("truevision") || selectedText.includes("integrated") || selectedText.includes("internal")) {
+            cameraSourceBadge.textContent = "Laptop Webcam";
+            cameraSourceBadge.className = "badge bg-primary font-monospace";
+        } else {
+            cameraSourceBadge.textContent = "External Camera";
+            cameraSourceBadge.className = "badge bg-secondary font-monospace";
+        }
+    }
+
+    // Enumerate Available Camera Devices (Webcams & DroidCam)
+    async function enumerateCameraDevices() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(d => d.kind === "videoinput");
+
+            cameraSelect.innerHTML = "";
+            if (videoDevices.length === 0) {
+                cameraSelect.innerHTML = '<option value="">No cameras found</option>';
+                cameraSourceBadge.textContent = "No Camera";
+                cameraSourceBadge.className = "badge bg-danger";
+                return;
+            }
+
+            const savedDeviceId = localStorage.getItem("selectedCameraDeviceId");
+            let preferredOption = null;
+
+            videoDevices.forEach((device, index) => {
+                const opt = document.createElement("option");
+                opt.value = device.deviceId;
+
+                const labelLower = (device.label || "").toLowerCase();
+                let cleanLabel = device.label || `Camera Device ${index + 1}`;
+                const isDroidCam = labelLower.includes("droidcam") || labelLower.includes("droid") || labelLower.includes("virtual");
+                const isLaptop = labelLower.includes("hp") || labelLower.includes("truevision") || labelLower.includes("integrated") || labelLower.includes("internal");
+
+                if (isDroidCam) {
+                    cleanLabel = `📱 ${cleanLabel} (Phone Camera - DroidCam)`;
+                } else if (isLaptop) {
+                    cleanLabel = `💻 ${cleanLabel} (Laptop Webcam)`;
+                } else {
+                    cleanLabel = `📷 ${cleanLabel}`;
+                }
+
+                opt.textContent = cleanLabel;
+
+                if (savedDeviceId && device.deviceId === savedDeviceId) {
+                    preferredOption = opt;
+                } else if (!preferredOption && isDroidCam) {
+                    preferredOption = opt; // Prioritize DroidCam if available
+                }
+
+                cameraSelect.appendChild(opt);
+            });
+
+            if (preferredOption) {
+                preferredOption.selected = true;
+            } else if (cameraSelect.options.length > 0) {
+                cameraSelect.selectedIndex = 0;
+            }
+
+            updateCameraBadge();
+
+            // Set default mirror view based on device type if user hasn't explicitly toggled it
+            if (!localStorage.getItem("mirrorManuallySet")) {
+                const isPhone = (cameraSelect.options[cameraSelect.selectedIndex]?.text || "").toLowerCase().includes("phone");
+                mirrorToggle.checked = !isPhone; // Phone cameras unmirrored by default; laptop webcams mirrored
+                applyMirroring();
+            }
+        } catch (err) {
+            console.warn("Could not enumerate camera devices:", err);
+        }
+    }
+
+    // Capture current frame from live video
+    function captureCurrentVideoFrame() {
+        if (!cameraRunning || isProcessing) return;
+        if (!video.videoWidth || !video.videoHeight) return;
+
+        captureCanvas.width = video.videoWidth;
+        captureCanvas.height = video.videoHeight;
+
+        const ctx = captureCanvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+
+        // Check for blank green screen issue from DroidCam
+        if (isBlankGreenFrame(captureCanvas)) {
+            showError("DroidCam Blank Green Screen Detected: The camera driver is connected, but video frames are not being transmitted. In the DroidCam Client window, ensure your phone is connected and 'Activate Virtual Camera' is started (or select Laptop Webcam above).");
+            setStatus("Green Screen (Idle Stream)", "danger");
+            fpsIndicator.textContent = "Green Screen Detected";
+            if (analysisTimer) clearTimeout(analysisTimer);
+            analysisTimer = setTimeout(captureCurrentVideoFrame, 2000); // Retry checking in 2 seconds
+            return;
+        }
+
+        const dataUrl = captureCanvas.toDataURL("image/jpeg", 0.90);
+        sendFrameForAnalysis(dataUrl, false);
+    }
+
+    // START CAMERA
+    async function startCamera() {
+        if (cameraRunning) return;
+        if (!isCameraSupported()) return;
+
+        hideAlerts();
+        resetResults();
+        setStatus("Initializing", "warning");
+        startBtn.disabled = true;
+
+        const selectedDeviceId = cameraSelect.value;
+        const selectedLabel = (cameraSelect.options[cameraSelect.selectedIndex]?.text || "").toLowerCase();
+        const isDroidCam = selectedLabel.includes("droidcam") || selectedLabel.includes("phone");
+
+        try {
+            let stream = null;
+
+            // Strategy 1: HD 720p with selected device
+            try {
+                const hdConstraints = {
+                    video: selectedDeviceId ? {
+                        deviceId: { exact: selectedDeviceId },
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 }
+                    } : {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                };
+                stream = await navigator.mediaDevices.getUserMedia(hdConstraints);
+            } catch (hdErr) {
+                console.warn("HD constraints negotiation failed, trying exact device constraints:", hdErr);
+            }
+
+            // Strategy 2: Relaxed deviceId constraints (essential for virtual cameras)
+            if (!stream && selectedDeviceId) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { deviceId: { exact: selectedDeviceId } },
+                        audio: false
+                    });
+                } catch (devErr) {
+                    console.warn("Relaxed device constraints failed, trying basic video:", devErr);
+                }
+            }
+
+            // Strategy 3: Standard fallback
+            if (!stream) {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            }
+
+            mediaStream = stream;
+            video.srcObject = mediaStream;
+
+            // Wait for video stream to be ready with robust fallback
+            if (video.readyState < 1) {
+                await new Promise((resolve) => {
+                    let done = false;
+                    const onReady = () => {
+                        if (!done) {
+                            done = true;
+                            video.removeEventListener("loadedmetadata", onReady);
+                            video.removeEventListener("canplay", onReady);
+                            video.play().then(resolve).catch(resolve);
+                        }
+                    };
+                    video.addEventListener("loadedmetadata", onReady);
+                    video.addEventListener("canplay", onReady);
+                    setTimeout(onReady, 2000); // 2.0s fallback so it never hangs
+                });
+            } else {
+                try {
+                    await video.play();
+                } catch (playErr) {
+                    console.warn("video.play notice:", playErr);
+                }
+            }
+
+            // Re-enumerate to get friendly device names now that permissions are granted
+            await enumerateCameraDevices();
+
+            // Stream is active
+            cameraRunning = true;
+            consecutiveErrors = 0;
+            if (retryBtn) retryBtn.classList.add("d-none");
+
+            if (videoWrapper) videoWrapper.style.display = "inline-block";
+            video.style.display = "block";
+            overlayCanvas.style.display = "block";
+            previewImage.style.display = "none";
+            cameraOverlay.style.display = "none";
+
+            applyMirroring();
+
+            // Update controls
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            captureBtn.disabled = false;
+
+            systemBadge.textContent = "Camera Active";
+            systemBadge.className = "badge bg-success p-2";
+            setStatus("Detecting Face", "info");
+            fpsIndicator.textContent = "Live Stream Active";
+
+            const track = mediaStream.getVideoTracks()[0];
+            const settings = track ? track.getSettings() : {};
+            if (settings.width && settings.height) {
+                resolutionBadge.textContent = `${settings.width}x${settings.height}`;
+            } else {
+                resolutionBadge.textContent = "Live Stream";
+            }
+
+            // Trigger initial frame after 400ms (chained continuously thereafter)
+            if (analysisTimer) clearTimeout(analysisTimer);
+            analysisTimer = setTimeout(captureCurrentVideoFrame, 400);
+
+        } catch (err) {
+            console.error("Camera access error:", err);
+            cameraRunning = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            captureBtn.disabled = true;
+
+            systemBadge.textContent = "Camera Error";
+            systemBadge.className = "badge bg-danger p-2";
+            setStatus("Camera Failed", "danger");
+
+            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                showError("Camera permission was denied. Please allow camera access in your browser settings (click the camera icon in the URL address bar) and refresh.");
+            } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+                showError("No camera device was found on this system. Please connect a working webcam or start DroidCam.");
+            } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+                if (isDroidCam) {
+                    showError("DroidCam Video is in use or the virtual driver output is not running. Please ensure DroidCam Client is open with phone connected, and 'Activate Virtual Camera' is started.");
+                } else {
+                    showError("The webcam is currently in use by another program or browser tab. Please close other applications using the camera.");
+                }
+            } else if (err.name === "OverconstrainedError") {
+                showError("The requested camera resolution is not supported by this camera device.");
+            } else {
+                showError("Camera access failed: " + (err.message || err.name));
+            }
+        }
+    }
+
+    // STOP CAMERA
+    function stopCamera() {
+        cameraRunning = false;
+        consecutiveErrors = 0;
+        if (retryBtn) retryBtn.classList.add("d-none");
+        currentRequestId++; // Invalidate any pending in-flight camera request
+
+        if (analysisTimer) {
+            clearTimeout(analysisTimer);
+            analysisTimer = null;
+        }
+
+        if (mediaStream) {
+            mediaStream.getTracks().forEach((track) => {
+                try {
+                    track.stop();
+                } catch (e) {
+                    console.warn("Track stop error:", e);
+                }
+            });
+            mediaStream = null;
+        }
+
+        video.srcObject = null;
+        if (videoWrapper) videoWrapper.style.display = "none";
+        video.style.display = "none";
+        overlayCanvas.style.display = "none";
+        previewImage.style.display = "none";
+        cameraOverlay.style.display = "flex";
+
+        clearOverlay();
+
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        captureBtn.disabled = true;
+
+        systemBadge.textContent = "Camera Inactive";
+        systemBadge.className = "badge bg-secondary p-2";
+        setStatus("Camera Stopped", "warning");
+        fpsIndicator.textContent = "Stopped";
+        resolutionBadge.textContent = "Ready";
+        isProcessing = false;
+    }
+
+    // EVENT LISTENERS
+    startBtn.addEventListener("click", startCamera);
+    stopBtn.addEventListener("click", stopCamera);
+
+    if (retryBtn) {
+        retryBtn.addEventListener("click", function () {
+            consecutiveErrors = 0;
+            retryBtn.classList.add("d-none");
+            hideAlerts();
+            setStatus("Analyzing", "warning");
+            if (cameraRunning) {
+                captureCurrentVideoFrame();
+            } else if (previewImage.src) {
+                sendFrameForAnalysis(previewImage.src, true);
+            }
+        });
+    }
+
+    captureBtn.addEventListener("click", function () {
+        if (!cameraRunning) {
+            showNotice("Please click Start Camera first to capture live frames.");
+            return;
+        }
+        captureCanvas.width = video.videoWidth;
+        captureCanvas.height = video.videoHeight;
+        const ctx = captureCanvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+        const dataUrl = captureCanvas.toDataURL("image/jpeg", 0.85);
+        sendFrameForAnalysis(dataUrl, true);
+    });
+
+    // UPLOAD PHOTO
+    fileInput.addEventListener("change", function () {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // Validate format
+        const validExtensions = [".jpg", ".jpeg", ".png", ".webp", ".bmp"];
+        const fileName = (file.name || "").toLowerCase();
+        const hasValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+        if (!hasValidExt) {
+            showError("Unsupported file format. Please upload a JPG, JPEG, PNG, WEBP, or BMP image.");
+            fileInput.value = "";
+            return;
+        }
+
+        // Validate size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            showError("Image file is too large. Maximum supported image size is 10MB.");
+            fileInput.value = "";
+            return;
+        }
+
+        // If live camera is running, stop it
+        if (cameraRunning) {
+            stopCamera();
+        }
+
+        hideAlerts();
+        resetResults("Analyzing Photo...");
+        setStatus("Reading Photo...", "warning");
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const dataUrl = e.target.result;
+
+            // Display in preview image
+            previewImage.src = dataUrl;
+            previewImage.style.display = "block";
+            if (videoWrapper) videoWrapper.style.display = "none";
+            video.style.display = "none";
+            overlayCanvas.style.display = "none";
+            cameraOverlay.style.display = "none";
+
+            systemBadge.textContent = "Photo Loaded";
+            systemBadge.className = "badge bg-info text-dark p-2";
+
+            // Submit image to backend API
+            sendFrameForAnalysis(dataUrl, true);
+
+            // Reset input so user can re-upload the same or another file
+            fileInput.value = "";
+        };
+
+        reader.onerror = function () {
+            showError("Failed to read image file.");
+            setStatus("File Error", "danger");
+            fileInput.value = "";
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+    // SAVE RESULT
+    saveBtn.addEventListener("click", async function () {
+        if (!latestEmotion) {
+            showNotice("No detected emotion to save yet. Run detection first.");
+            return;
+        }
+
+        saveBtn.disabled = true;
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+        try {
+            const response = await fetch(saveUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    emotion: latestEmotion,
+                    confidence: latestConfidence
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || "Failed to save recognition record.");
+            }
+
+            showNotice(`Result saved successfully! (${latestEmotion} - ${latestConfidence.toFixed(1)}%) at ${data.timestamp || 'just now'}.`);
+
+        } catch (err) {
+            console.error("Save error:", err);
+            showError("Could not save result: " + err.message);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+    });
+
+    // Camera Source Dropdown Change Listener
+    if (cameraSelect) {
+        cameraSelect.addEventListener("change", function () {
+            const id = cameraSelect.value;
+            if (id) {
+                localStorage.setItem("selectedCameraDeviceId", id);
+            }
+            updateCameraBadge();
+            // Automatically update mirror toggle to sensible default if user hasn't toggled manually
+            if (!localStorage.getItem("mirrorManuallySet")) {
+                const isPhone = (cameraSelect.options[cameraSelect.selectedIndex]?.text || "").toLowerCase().includes("phone");
+                mirrorToggle.checked = !isPhone;
+                applyMirroring();
+            }
+            // If camera is currently streaming, seamlessly switch device
+            if (cameraRunning) {
+                stopCamera();
+                setTimeout(startCamera, 300);
+            }
+        });
+    }
+
+    if (btnRefreshCameras) {
+        btnRefreshCameras.addEventListener("click", async function () {
+            await enumerateCameraDevices();
+            showNotice("Camera device list refreshed.");
+            setTimeout(hideAlerts, 2000);
+        });
+    }
+
+    if (mirrorToggle) {
+        mirrorToggle.addEventListener("change", function () {
+            localStorage.setItem("mirrorManuallySet", "true");
+            applyMirroring();
+        });
+    }
+
+    // Populate camera devices on page load
+    enumerateCameraDevices();
+    if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+        navigator.mediaDevices.addEventListener("devicechange", enumerateCameraDevices);
+    }
+
+    // Teardown when user navigates away
+    window.addEventListener("beforeunload", function () {
+        if (cameraRunning) {
+            stopCamera();
+        }
+    });
+});
+</script>
+{% endblock %}

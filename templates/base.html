@@ -1,0 +1,1157 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ title|default:"Facial Emotion Recognition System" }}</title>
+
+    <!-- Bootstrap 5 -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        rel="stylesheet"
+    >
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    {% block extra_css %}{% endblock %}
+
+    <!-- Premium Theme Override -->
+    <style>
+        :root {
+            --premium-bg: #070b18;
+            --premium-bg-light: #0d1326;
+            --premium-card: #121a31;
+            --premium-card-light: #18223e;
+            --premium-primary: #6c63ff;
+            --premium-primary-light: #8b85ff;
+            --premium-cyan: #22d3ee;
+            --premium-text: #f8fafc;
+            --premium-muted: #94a3b8;
+            --premium-border: rgba(148, 163, 184, 0.15);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0 !important;
+
+            background:
+                radial-gradient(
+                    circle at 10% 10%,
+                    rgba(108, 99, 255, 0.12),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 90% 20%,
+                    rgba(34, 211, 238, 0.08),
+                    transparent 30%
+                ),
+                linear-gradient(
+                    135deg,
+                    #070b18,
+                    #0a1022,
+                    #070b18
+                ) !important;
+
+            background-attachment: fixed !important;
+
+            color: var(--premium-text) !important;
+            min-height: 100vh;
+        }
+
+        /* ==============================
+           NAVBAR
+        ============================== */
+
+        .navbar-custom {
+            background:
+                rgba(7, 11, 24, 0.92) !important;
+
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+
+            border-bottom:
+                1px solid rgba(148, 163, 184, 0.14) !important;
+
+            box-shadow:
+                0 10px 35px rgba(0, 0, 0, 0.30);
+
+            padding-top: 13px;
+            padding-bottom: 13px;
+
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-size: 1.25rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 1px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #ffffff,
+                    #8b85ff,
+                    #22d3ee
+                );
+
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            transition: 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            transform: translateY(-1px);
+        }
+
+        .navbar-brand i {
+            color: #22d3ee !important;
+            -webkit-text-fill-color: #22d3ee;
+        }
+
+        .nav-link {
+            color: #aebbd0 !important;
+
+            font-weight: 500;
+
+            border-radius: 9px;
+
+            margin: 0 3px;
+
+            padding: 9px 13px !important;
+
+            transition:
+                all 0.25s ease;
+        }
+
+        .nav-link:hover {
+            color: #ffffff !important;
+
+            background:
+                rgba(108, 99, 255, 0.12);
+
+            transform: translateY(-1px);
+        }
+
+        .nav-link.active {
+            color: #ffffff !important;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(18, 114, 223, 0.25),
+                    rgba(42, 184, 206, 0.08)
+                );
+
+            box-shadow:
+                inset 0 0 0 1px
+                rgba(108, 99, 255, 0.18);
+        }
+
+        .navbar-toggler {
+            border:
+                1px solid rgba(255,255,255,0.15);
+        }
+
+        .navbar-toggler:focus {
+            box-shadow:
+                0 0 0 3px rgba(108, 99, 255, 0.15);
+        }
+
+        /* ==============================
+           MAIN CONTENT
+        ============================== */
+
+        .main-content {
+            min-height: calc(100vh - 150px);
+            position: relative;
+        }
+
+        /* ==============================
+           HERO
+        ============================== */
+
+        .hero-section {
+            position: relative;
+
+            padding:
+                100px 0 90px;
+
+            overflow: hidden;
+
+            background:
+                radial-gradient(
+                    circle at 75% 15%,
+                    rgba(108, 99, 255, 0.18),
+                    transparent 35%
+                ),
+                radial-gradient(
+                    circle at 20% 80%,
+                    rgba(34, 211, 238, 0.08),
+                    transparent 30%
+                );
+        }
+
+        .hero-title {
+            font-size:
+                clamp(2.3rem, 5vw, 4rem) !important;
+
+            font-weight:
+                800 !important;
+
+            line-height:
+                1.1;
+
+            letter-spacing:
+                -1px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #ffffff,
+                    #dbe4f4,
+                    #8580ff
+                );
+
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            color:
+                #94a3b8 !important;
+
+            font-size:
+                1.1rem;
+
+            line-height:
+                1.8;
+        }
+
+        /* ==============================
+           CARDS
+        ============================== */
+
+        .card-custom {
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(24, 34, 62, 0.95),
+                    rgba(13, 20, 40, 0.95)
+                ) !important;
+
+            border:
+                1px solid
+                rgba(148, 163, 184, 0.14) !important;
+
+            border-radius:
+                18px !important;
+
+            box-shadow:
+                0 20px 50px
+                rgba(0, 0, 0, 0.28) !important;
+
+            overflow:
+                hidden;
+
+            transition:
+                all 0.3s ease;
+        }
+
+        .card-custom:hover {
+            transform:
+                translateY(-4px);
+
+            border-color:
+                rgba(108, 99, 255, 0.35) !important;
+
+            box-shadow:
+                0 25px 60px
+                rgba(0, 0, 0, 0.38) !important;
+        }
+
+        /* ==============================
+           BUTTONS
+        ============================== */
+
+        .btn-primary-custom {
+            background:
+                linear-gradient(
+                    135deg,
+                    #6c63ff,
+                    #5148d8
+                ) !important;
+
+            border:
+                none !important;
+
+            color:
+                #ffffff !important;
+
+            font-weight:
+                650;
+
+            padding:
+                11px 24px;
+
+            border-radius:
+                10px;
+
+            box-shadow:
+                0 8px 25px
+                rgba(108, 99, 255, 0.30);
+
+            transition:
+                all 0.25s ease;
+        }
+
+        .btn-primary-custom:hover {
+            color:
+                #ffffff !important;
+
+            transform:
+                translateY(-2px);
+
+            box-shadow:
+                0 13px 35px
+                rgba(108, 99, 255, 0.42);
+
+            filter:
+                brightness(1.08);
+        }
+
+        .btn-outline-custom {
+            background:
+                rgba(255,255,255,0.025) !important;
+
+            border:
+                1px solid
+                rgba(148,163,184,0.25) !important;
+
+            color:
+                #dbe4f4 !important;
+
+            font-weight:
+                600;
+
+            padding:
+                10px 23px;
+
+            border-radius:
+                10px;
+
+            transition:
+                all 0.25s ease;
+        }
+
+        .btn-outline-custom:hover {
+            background:
+                rgba(108,99,255,0.12) !important;
+
+            border-color:
+                rgba(108,99,255,0.55) !important;
+
+            color:
+                #ffffff !important;
+
+            transform:
+                translateY(-2px);
+        }
+
+        /* Logout */
+
+        .btn-outline-danger {
+            border-radius: 9px !important;
+
+            border-color:
+                rgba(239,68,68,0.35) !important;
+
+            transition:
+                all 0.25s ease;
+        }
+
+        .btn-outline-danger:hover {
+            transform:
+                translateY(-2px);
+
+            box-shadow:
+                0 8px 20px
+                rgba(239,68,68,0.18);
+        }
+
+        /* ==============================
+           CAMERA
+        ============================== */
+
+        .camera-container {
+            background:
+                #040711 !important;
+
+            border:
+                1px solid
+                rgba(108,99,255,0.35) !important;
+
+            border-radius:
+                20px !important;
+
+            box-shadow:
+                0 25px 70px
+                rgba(0,0,0,0.45),
+                0 0 35px
+                rgba(108,99,255,0.08) !important;
+
+            overflow:
+                hidden;
+
+            position:
+                relative;
+        }
+
+        .camera-feed {
+            width:
+                100%;
+
+            height:
+                100%;
+
+            object-fit:
+                cover;
+        }
+
+        /* ==============================
+           FORMS
+        ============================== */
+
+        .form-control-custom {
+            background:
+                rgba(6, 11, 25, 0.80) !important;
+
+            border:
+                1px solid
+                rgba(148,163,184,0.18) !important;
+
+            color:
+                #ffffff !important;
+
+            border-radius:
+                10px !important;
+
+            padding:
+                11px 14px;
+
+            transition:
+                all 0.25s ease;
+        }
+
+        .form-control-custom::placeholder {
+            color:
+                #64748b !important;
+        }
+
+        .form-control-custom:focus {
+            background:
+                rgba(8,14,30,0.95) !important;
+
+            border-color:
+                #6c63ff !important;
+
+            color:
+                #ffffff !important;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(108,99,255,0.14) !important;
+
+            outline:
+                none;
+        }
+
+        label {
+            color:
+                #cbd5e1;
+
+            font-weight:
+                600;
+        }
+
+        /* ==============================
+           PROGRESS
+        ============================== */
+
+        .progress-bar-custom {
+            background:
+                rgba(148,163,184,0.12) !important;
+
+            height:
+                11px;
+
+            border-radius:
+                20px;
+
+            overflow:
+                hidden;
+        }
+
+        .progress-fill {
+            background:
+                linear-gradient(
+                    90deg,
+                    #22d3ee,
+                    #6c63ff
+                ) !important;
+
+            height:
+                100%;
+
+            border-radius:
+                20px;
+
+            transition:
+                width 0.5s ease;
+        }
+
+        /* ==============================
+           TABLE
+        ============================== */
+
+        .table-custom {
+            color:
+                #f8fafc !important;
+
+            border-color:
+                rgba(148,163,184,0.12) !important;
+        }
+
+        .table-custom th {
+            background:
+                #0c1327 !important;
+
+            color:
+                #aebbd0 !important;
+
+            border-bottom:
+                1px solid
+                rgba(148,163,184,0.18) !important;
+
+            padding:
+                15px;
+
+            font-size:
+                0.78rem;
+
+            text-transform:
+                uppercase;
+
+            letter-spacing:
+                0.6px;
+        }
+
+        .table-custom td {
+            background:
+                rgba(18,26,49,0.80) !important;
+
+            color:
+                #dbe4f4 !important;
+
+            border-color:
+                rgba(148,163,184,0.10) !important;
+
+            padding:
+                14px 15px;
+        }
+
+        .table-custom tbody tr:hover td {
+            background:
+                rgba(108,99,255,0.08) !important;
+        }
+
+        /* ==============================
+           ALERTS
+        ============================== */
+
+        .alert {
+            border-radius:
+                12px !important;
+
+            border:
+                1px solid
+                rgba(148,163,184,0.15) !important;
+        }
+
+        /* ==============================
+           BADGES
+        ============================== */
+
+        .badge {
+            border-radius:
+                7px;
+
+            padding:
+                6px 9px;
+
+            font-weight:
+                600;
+        }
+
+        /* ==============================
+           FOOTER
+        ============================== */
+
+        footer {
+            position:
+                relative;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #080d1c,
+                    #040711
+                ) !important;
+
+            border-top:
+                1px solid
+                rgba(148,163,184,0.14) !important;
+
+            padding:
+                40px 0 25px !important;
+
+            margin-top:
+                auto;
+        }
+
+        footer h5,
+        footer h6 {
+            color:
+                #ffffff !important;
+
+            font-weight:
+                700;
+        }
+
+        footer p {
+            color:
+                #7f8da5 !important;
+
+            line-height:
+                1.7;
+        }
+
+        footer .text-muted {
+            color:
+                #7f8da5 !important;
+        }
+
+        footer a {
+            color:
+                #8997ae !important;
+
+            transition:
+                color 0.2s ease;
+        }
+
+        footer a:hover {
+            color:
+                #22d3ee !important;
+        }
+
+        footer hr {
+            border-color:
+                rgba(148,163,184,0.13) !important;
+        }
+
+        /* ==============================
+           SCROLLBAR
+        ============================== */
+
+        ::-webkit-scrollbar {
+            width:
+                8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background:
+                #050914;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background:
+                linear-gradient(
+                    180deg,
+                    #6c63ff,
+                    #22d3ee
+                );
+
+            border-radius:
+                20px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background:
+                #8580ff;
+        }
+
+        /* ==============================
+           RESPONSIVE
+        ============================== */
+
+        @media (max-width: 768px) {
+
+            .navbar-custom {
+                padding:
+                    10px 0 !important;
+            }
+
+            .nav-link {
+                margin:
+                    3px 0;
+            }
+
+            .hero-section {
+                padding:
+                    65px 0 55px;
+            }
+
+            .hero-title {
+                font-size:
+                    2.3rem !important;
+            }
+
+            .camera-container {
+                height:
+                    360px;
+            }
+        }
+
+        @media (max-width: 576px) {
+
+            .hero-title {
+                font-size:
+                    2rem !important;
+            }
+
+            .hero-subtitle {
+                font-size:
+                    0.95rem;
+            }
+
+            .camera-container {
+                height:
+                    300px;
+            }
+
+            .btn-primary-custom,
+            .btn-outline-custom {
+                width:
+                    100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ==============================
+         NAVBAR
+    ============================== -->
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+
+        <div class="container">
+
+            <a
+                class="navbar-brand d-flex align-items-center gap-2"
+                href="{% url 'home' %}"
+            >
+                <i class="bi bi-emoji-smile-fill fs-4"></i>
+
+                <span>EMOTION AI</span>
+            </a>
+
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div
+                class="collapse navbar-collapse"
+                id="navbarNav"
+            >
+
+                <!-- Navigation -->
+
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                            href="{% url 'home' %}"
+                        >
+                            <i class="bi bi-house-door me-1"></i>
+                            Home
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}"
+                            href="{% url 'about' %}"
+                        >
+                            <i class="bi bi-info-circle me-1"></i>
+                            About
+                        </a>
+                    </li>
+
+                    {% if user.is_authenticated %}
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                            href="{% url 'dashboard' %}"
+                        >
+                            <i class="bi bi-speedometer2 me-1"></i>
+                            Dashboard
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link {% if request.resolver_match.url_name == 'recognition' %}active{% endif %}"
+                            href="{% url 'recognition' %}"
+                        >
+                            <i class="bi bi-camera-video me-1"></i>
+                            Recognition
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link {% if request.resolver_match.url_name == 'history' %}active{% endif %}"
+                            href="{% url 'history' %}"
+                        >
+                            <i class="bi bi-clock-history me-1"></i>
+                            History
+                        </a>
+                    </li>
+
+                    {% endif %}
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"
+                            href="{% url 'contact' %}"
+                        >
+                            <i class="bi bi-envelope me-1"></i>
+                            Contact
+                        </a>
+                    </li>
+
+                </ul>
+
+
+                <!-- Right Side -->
+
+                <div class="d-flex gap-2 align-items-center">
+
+                    {% if user.is_authenticated %}
+
+                        <span
+                            class="text-light me-2 d-none d-md-inline small"
+                            style="color:#cbd5e1 !important;"
+                        >
+                            <i
+                                class="bi bi-person-circle me-1"
+                                style="color:#22d3ee;"
+                            ></i>
+
+                            {{ user.first_name|default:user.username }}
+                        </span>
+
+                        <a
+                            href="{% url 'logout' %}"
+                            class="btn btn-outline-danger btn-sm"
+                        >
+                            <i class="bi bi-box-arrow-right me-1"></i>
+                            Logout
+                        </a>
+
+                    {% else %}
+
+                        <a
+                            href="{% url 'login' %}"
+                            class="btn btn-outline-custom btn-sm"
+                        >
+                            <i class="bi bi-box-arrow-in-right me-1"></i>
+                            Login
+                        </a>
+
+                        <a
+                            href="{% url 'register' %}"
+                            class="btn btn-primary-custom btn-sm"
+                        >
+                            <i class="bi bi-person-plus me-1"></i>
+                            Register
+                        </a>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- ==============================
+         MESSAGES
+    ============================== -->
+
+    <div class="container mt-3">
+
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div
+                    class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm"
+                    role="alert"
+                >
+
+                    {% if message.tags == 'danger' or message.tags == 'error' %}
+
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+                    {% elif message.tags == 'success' %}
+
+                        <i class="bi bi-check-circle-fill me-2"></i>
+
+                    {% else %}
+
+                        <i class="bi bi-info-circle-fill me-2"></i>
+
+                    {% endif %}
+
+                    {{ message }}
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"
+                    ></button>
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ==============================
+         MAIN CONTENT
+    ============================== -->
+
+    <main class="main-content">
+
+        {% block content %}
+
+        {% endblock %}
+
+    </main>
+
+
+    <!-- ==============================
+         FOOTER
+    ============================== -->
+
+    <footer>
+
+        <div class="container">
+
+            <div class="row gy-4">
+
+                <!-- About -->
+
+                <div class="col-md-5">
+
+                    <h5 class="d-flex align-items-center gap-2">
+
+                        <i
+                            class="bi bi-emoji-smile-fill"
+                            style="color:#22d3ee;"
+                        ></i>
+
+                        FACIAL EMOTION RECOGNITION
+
+                    </h5>
+
+                    <p class="small mt-2">
+
+                        Real-time AI-powered facial emotion recognition
+                        web application built with Django, OpenCV,
+                        TensorFlow/Keras, and SQLite for computer vision
+                        and deep learning analysis.
+
+                    </p>
+
+                </div>
+
+
+                <!-- Quick Links -->
+
+                <div class="col-md-3">
+
+                    <h6 class="mb-3">
+                        Quick Links
+                    </h6>
+
+                    <ul class="list-unstyled small">
+
+                        <li class="mb-2">
+                            <a
+                                href="{% url 'home' %}"
+                                class="text-decoration-none"
+                            >
+                                Home
+                            </a>
+                        </li>
+
+                        <li class="mb-2">
+                            <a
+                                href="{% url 'about' %}"
+                                class="text-decoration-none"
+                            >
+                                About System
+                            </a>
+                        </li>
+
+                        <li class="mb-2">
+                            <a
+                                href="{% url 'contact' %}"
+                                class="text-decoration-none"
+                            >
+                                Contact Us
+                            </a>
+                        </li>
+
+                        {% if user.is_authenticated %}
+
+                        <li class="mb-2">
+                            <a
+                                href="{% url 'recognition' %}"
+                                class="text-decoration-none"
+                            >
+                                Real-Time Recognition
+                            </a>
+                        </li>
+
+                        {% endif %}
+
+                    </ul>
+
+                </div>
+
+
+                <!-- Technology -->
+
+                <div class="col-md-4">
+
+                    <h6 class="mb-3">
+                        Technology Stack
+                    </h6>
+
+                    <div class="d-flex flex-wrap gap-2">
+
+                        <span class="badge bg-secondary">
+                            Python 3
+                        </span>
+
+                        <span class="badge bg-primary">
+                            Django
+                        </span>
+
+                        <span class="badge bg-success">
+                            OpenCV
+                        </span>
+
+                        <span class="badge bg-warning text-dark">
+                            TensorFlow
+                        </span>
+
+                        <span class="badge bg-info text-dark">
+                            NumPy
+                        </span>
+
+                        <span class="badge bg-danger">
+                            SQLite
+                        </span>
+
+                        <span class="badge bg-dark">
+                            Bootstrap 5
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <hr class="my-4">
+
+
+            <div
+                class="d-flex flex-column flex-md-row justify-content-between align-items-center small"
+                style="color:#71809a;"
+            >
+
+                <div>
+                    © 2026 Facial Emotion Recognition System.
+                    All rights reserved.
+                </div>
+
+                <div>
+                       
+                </div>
+
+            </div>
+
+        </div>
+
+    </footer>
+
+
+    <!-- Bootstrap JS -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    ></script>
+
+
+    <!-- Custom JS -->
+
+    <script src="{% static 'js/script.js' %}"></script>
+
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>
