@@ -1,174 +1,222 @@
 # FACIAL EMOTION RECOGNITION SYSTEM
 
-An AI-powered, real-time facial emotion recognition web application built using **Django**, **OpenCV**, **TensorFlow/Keras/PyTorch**, **NumPy**, and **SQLite**.
+An AI-powered, real-time facial emotion recognition web application built using **Django, Python, OpenCV, TensorFlow/Keras, NumPy, and SQLite**.
 
-Designed for **Diploma Projects**, **GitHub Portfolios**, and **Real-World AI Software Demonstrations**.
+Designed for Diploma Projects, GitHub Portfolios, and AI Software Demonstrations.
 
 ---
 
 ## 🌟 Key Features
 
-* 🎥 **Live Webcam Recognition**: Real-time facial emotion analysis with bounding box overlay and confidence scoring.
-* 🤖 **7 Emotion Classes**: Detects *Angry*, *Disgust*, *Fear*, *Happy*, *Sad*, *Surprise*, and *Neutral*.
-* 👤 **User Authentication**: Secure registration, login, password hashing, and user-specific data isolation using Django ORM.
-* 📊 **Analytics Dashboard**: Interactive stats displaying total sessions, top emotion, mean confidence, and Chart.js emotion distribution.
-* 📜 **Personalized History**: User-specific history logs with live search, emotion filtering, sorting, and session deletion.
-* 📩 **Contact & Support**: Integrated contact messaging system managed via Django Admin.
-* 📱 **Responsive Modern UI**: Built with Bootstrap 5, Bootstrap Icons, dark AI technology theme, and CSS animations.
+- **Live Webcam Recognition:** Real-time facial emotion analysis with bounding box overlay and confidence scoring.
+- **7 Emotion Classes:** Detects Angry, Disgust, Fear, Happy, Sad, Surprise, and Neutral.
+- **User Authentication:** Registration, login, password hashing, and user-specific data management.
+- **Analytics Dashboard:** Displays recognition statistics and emotion distribution.
+- **Personalized History:** User-specific recognition history with search, filtering, sorting, and deletion.
+- **Contact & Support:** Integrated contact messaging system.
+- **Responsive UI:** Modern interface built using HTML, CSS, JavaScript, and Bootstrap.
 
 ---
 
 ## 🛠️ Technology Stack
 
-* **Backend Framework**: Django 5.x (Python)
-* **Computer Vision**: OpenCV (Haar Cascade Face Detector)
-* **Deep Learning**: TensorFlow / Keras / PyTorch (CNN Classifier)
-* **Data Processing**: NumPy, Pillow, h5py
-* **Database**: SQLite3 (via Django ORM)
-* **Frontend**: HTML5, CSS3, JavaScript (ES6+), Bootstrap 5, Chart.js
+- **Programming Language:** Python
+- **Backend Framework:** Django
+- **Computer Vision:** OpenCV
+- **Deep Learning:** TensorFlow / Keras
+- **Model:** Convolutional Neural Network (CNN)
+- **Data Processing:** NumPy, Pillow, h5py
+- **Database:** SQLite
+- **Frontend:** HTML5, CSS3, JavaScript
+- **UI Framework:** Bootstrap 5
 
 ---
 
 ## 📁 Project Architecture
 
-```
+```text
 FACIAL_EMOTION_RECOGNIZATION_SYSTEM/
 │
-├── manage.py                          # Django management script
+├── manage.py
 │
-├── facial_emotion_project/            # Main Django project package
+├── facial_emotion_project/
 │   ├── __init__.py
-│   ├── settings.py                    # Project configuration & settings
-│   ├── urls.py                        # Main URL routing
-│   ├── asgi.py                        # ASGI config
-│   └── wsgi.py                        # WSGI config
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
 │
-├── emotion/                           # Core Django application app
-│   ├── admin.py                       # Admin panel registrations
-│   ├── apps.py                        # App configuration
-│   ├── models.py                      # EmotionRecognition & ContactMessage ORM models
-│   ├── urls.py                        # Emotion app routing
-│   ├── views.py                        # Page, authentication & API views
-│   ├── forms.py                       # Registration, login & contact forms
-│   └── migrations/                    # Database migrations
+├── emotion/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
+│   └── migrations/
 │
-├── dataset/                           # Dataset storage
-│   ├── train/                         # Training data by emotion category
-│   └── test/                          # Test evaluation data
+├── models/
+│   ├── emotion_model.h5
+│   ├── emotion_model_improved.keras
+│   ├── emotion_model_trained.keras
+│   ├── face_detector.xml
+│   ├── emotion_labels.txt
+│   └── emotion_labels_trained.txt
 │
-├── models/                            # AI Model assets
-│   ├── emotion_model.h5               # Trained CNN emotion model weights
-│   ├── face_detector.xml              # OpenCV Haar Cascade XML classifier
-│   └── emotion_labels.txt             # Emotion class labels
+├── src/
+│   ├── camera.py
+│   ├── database.py
+│   ├── emotion_recognition.py
+│   ├── face_detection.py
+│   ├── prediction.py
+│   ├── preprocessing.py
+│   └── utils.py
 │
-├── src/                               # Core AI & computer vision logic
-│   ├── __init__.py
-│   ├── face_detection.py              # OpenCV face detection module
-│   ├── emotion_recognition.py         # CNN model loading & inference engine
-│   ├── camera.py                      # Video capture & web streaming generator
-│   ├── preprocessing.py               # Grayscale, resize, normalization pipeline
-│   ├── prediction.py                  # High-level frame inference interface
-│   ├── database.py                    # Django ORM database helper routines
-│   └── utils.py                       # Helper utilities & model file checks
+├── training/
+│   ├── data_preparation.py
+│   ├── evaluate_model.py
+│   ├── improve_model.py
+│   ├── train_model.py
+│   ├── train_real_model.py
+│   └── train_v2_model.py
 │
-├── training/                          # Model training & evaluation pipeline
-│   ├── data_preparation.py            # Dataset structure preparation script
-│   ├── train_model.py                 # CNN training script
-│   └── evaluate_model.py              # Model accuracy & evaluation report generator
+├── static/
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── script.js
 │
-├── static/                            # Static asset directory
-│   ├── css/style.css                  # Custom styling
-│   └── js/script.js                   # Interactivity & helper scripts
+├── templates/
+│   ├── base.html
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── dashboard.html
+│   ├── recognition.html
+│   ├── history.html
+│   ├── about.html
+│   └── contact.html
 │
-├── templates/                         # HTML templates
-│   ├── base.html                      # Main layout template
-│   ├── index.html                     # Landing page
-│   ├── login.html                     # Login page
-│   ├── register.html                  # User registration page
-│   ├── dashboard.html                 # Analytics dashboard
-│   ├── recognition.html               # Real-time webcam recognition page
-│   ├── history.html                   # User recognition history
-│   ├── about.html                     # System documentation page
-│   └── contact.html                   # Contact form page
-│
-├── results/                           # Experiment outputs & reports
-│   └── reports/                       # Evaluation JSON reports
-│
-├── requirements.txt                   # Project dependencies
-├── README.md                          # Project documentation
-└── .gitignore                         # Version control exclusions
+├── requirements.txt
+├── README.md
+└── .gitignore
 ```
 
 ---
 
 ## ⚙️ Installation & Setup Guide
 
-### 1. Clone or Open Project
-Navigate into the root directory:
+### 1. Clone the Repository
+
 ```bash
-cd FACIAL_EMOTION_RECOGNIZATION_SYSTEM
+git clone https://github.com/LILLYGRACE2907/Finalexternalproject.git
 ```
 
-### 2. Activate Virtual Environment
-```bash
-# Windows (PowerShell / CMD)
-.\venv\Scripts\activate
+### 2. Open the Project Folder
 
-# Linux / macOS
-source venv/bin/activate
+```bash
+cd Finalexternalproject
 ```
 
-### 3. Install Dependencies
+### 3. Create a Virtual Environment
+
+```bash
+python -m venv py312env
+```
+
+### 4. Activate Virtual Environment
+
+Windows CMD:
+
+```cmd
+py312env\Scripts\activate.bat
+```
+
+### 5. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Run Database Migrations
+### 6. Run Database Migrations
+
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 ```
 
-### 5. Create Superuser (Admin Access)
+### 7. Create Admin Account
+
 ```bash
 python manage.py createsuperuser
 ```
-*(Or use default seeded credentials: Username `admin` / Password `adminpassword123`)*
 
-### 6. Generate AI Model Files
-```bash
-python training/train_model.py
-```
+### 8. Run Django Development Server
 
-### 7. Launch Django Development Server
 ```bash
 python manage.py runserver
 ```
 
 Open your browser and visit:
-👉 **`http://127.0.0.1:8000/`**
+
+**http://127.0.0.1:8000/**
 
 ---
 
-## 🔑 Demo Account Credentials
+## 📷 How to Use Emotion Recognition
 
-* **Admin User**: `admin` / Password: `adminpassword123`
-* **Demo User**: `demo@example.com` / Password: `demopassword123`
-
----
-
-## 📷 How to Use Live Emotion Recognition
-
-1. Log in to your account.
-2. Click **Start Recognition** in the navigation bar.
-3. Allow browser webcam access or upload a photo.
-4. Click **Capture & Analyze** or view the live bounding box annotations.
-5. Click **Save Result** to record your session to your personal history!
+1. Open the web application.
+2. Register a new account or log in.
+3. Navigate to the Emotion Recognition page.
+4. Start the webcam or upload an image.
+5. Allow camera access when requested.
+6. View the detected face and predicted emotion.
+7. Save recognition results.
+8. View previous results in the History page.
 
 ---
 
-## 🎓 Diploma & GitHub Project Details
+## 🎯 Project Objectives
 
-* **Framework**: Django 5 Architecture
-* **License**: MIT License
-* **Status**: Complete & Production Ready
+- Detect human faces from images and live camera input.
+- Preprocess facial images for emotion classification.
+- Recognize seven basic facial emotions using a CNN model.
+- Integrate the trained model with Django.
+- Provide real-time facial emotion recognition.
+- Store and display recognition history.
+
+---
+
+## 🎓 Project Information
+
+**Project Title:** Facial Emotion Recognition System
+
+**Domain:** Artificial Intelligence and Machine Learning
+
+**Programming Language:** Python
+
+**Framework:** Django
+
+**Deep Learning Model:** CNN
+
+**Database:** SQLite
+
+**License:** MIT License
+
+**Status:** Developed for Academic Project Demonstration
+
+---
+
+## 👩‍💻 Author
+
+**P. Lilly Grace**
+
+Diploma in Communication and Computer Networking (CCN)
+
+Aditya Polytechnic College
+
+---
+
+## 📌 Note
+
+This project is developed for educational and demonstration purposes. Facial emotion predictions are model-based estimates and should not be treated as definitive measurements of a person's actual emotional state.
